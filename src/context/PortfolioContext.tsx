@@ -23,7 +23,16 @@ interface SiteConfig {
 }
 
 const defaultConfig: SiteConfig = {
-  tv: { width: 500, height: 350, x: 100, y: 100, rotation: 0, borderRadius: 20, opacity: 1 },
+  // Ajuste esses valores para a TV da sua imagem (experimente!)
+  tv: { 
+    width: 450,      // Largura da tela da TV
+    height: 320,     // Altura da tela da TV
+    x: 450,          // Distância da esquerda
+    y: 200,          // Distância do topo
+    rotation: 0, 
+    borderRadius: 20, 
+    opacity: 1 
+  },
   portfolioMode: 'editor',
   portfolioElements: [],
   pdfUrl: null,
