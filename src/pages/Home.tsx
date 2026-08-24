@@ -8,14 +8,33 @@ const Home = () => {
   const [isTvOn, setIsTvOn] = useState(false);
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
-      {/* Imagem de fundo (Ajuste a proporção para caber na tela) */}
-      <img src="/assets/background.jpg" alt="Background" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    <div style={{ 
+      position: 'relative', 
+      width: '100vw', 
+      height: '100vh', 
+      overflow: 'hidden', 
+      background: '#000' 
+    }}>
       
-      {/* Livro (Camada transparente) */}
+      {/* IMAGEM DE FUNDO (A cena completa) */}
+      <img 
+        src="/assets/background.jpg" 
+        alt="Ambiente" 
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%', 
+          height: '100%', 
+          objectFit: 'cover',
+          zIndex: 1
+        }} 
+      />
+
+      {/* O LIVRO (Camada transparente - Fica ACIMA do fundo) */}
       <Book />
 
-      {/* TV */}
+      {/* A TV (Fica ACIMA do livro) */}
       <div 
         style={{ 
           position: 'absolute', 
@@ -24,12 +43,14 @@ const Home = () => {
           width: config.tv.width, 
           height: config.tv.height, 
           transform: `rotate(${config.tv.rotation}deg)`,
-          zIndex: 10
+          zIndex: 10,
+          cursor: 'pointer'
         }}
         onClick={() => setIsTvOn(true)}
       >
         <TVScreen isOn={isTvOn} onOff={() => setIsTvOn(false)} />
       </div>
+
     </div>
   );
 };
