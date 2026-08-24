@@ -1,17 +1,31 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface TVConfig {
-  width: number; height: number; x: number; y: number; rotation: number;
-  borderRadius: number; opacity: number;
-}
-
+// Definição dos tipos (para o TypeScript não reclamar)
 interface Element {
-  id: string; type: 'text' | 'image' | 'pdf'; content: string; x: number; y: number;
-  width: number; height: number; fontFamily: string; fontSize: number; color: string; rotation: number;
+  id: string;
+  type: 'text' | 'image' | 'pdf';
+  content: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontFamily: string;
+  fontSize: number;
+  color: string;
+  rotation: number;
+  align: 'left' | 'center' | 'right';
+  opacity: number;
 }
 
 interface BookPage {
-  id: string; elements: Element[]; background: string;
+  id: string;
+  elements: Element[];
+  background: string;
+}
+
+interface TVConfig {
+  width: number; height: number; x: number; y: number; rotation: number;
+  borderRadius: number; opacity: number;
 }
 
 interface SiteConfig {
@@ -23,34 +37,40 @@ interface SiteConfig {
 }
 
 const defaultConfig: SiteConfig = {
-  // Ajuste esses valores para a TV da sua imagem (experimente!)
-  tv: { 
-    width: 450,      // Largura da tela da TV
-    height: 320,     // Altura da tela da TV
-    x: 450,          // Distância da esquerda
-    y: 200,          // Distância do topo
-    rotation: 0, 
-    borderRadius: 20, 
-    opacity: 1 
-  },
+  tv: { width: 500, height: 350, x: 450, y: 200, rotation: 0, borderRadius: 20, opacity: 1 },
   portfolioMode: 'editor',
-  portfolioElements: [],
+  portfolioElements: [
+    { id: '1', type: 'text', content: 'Meu Portfólio', x: 50, y: 50, width: 300, height: 60, fontFamily: 'Arial', fontSize: 32, color: '#ffffff', rotation: 0, align: 'center', opacity: 1 }
+  ],
   pdfUrl: null,
-  bookPages: []
+  bookPages: [
+    { id: 'pag1', elements: [{ id: 'txt1', type: 'text', content: 'Capítulo 1', x: 20, y: 20, width: 200, height: 50, fontFamily: 'Georgia', fontSize: 24, color: '#333', rotation: 0, align: 'left', opacity: 1 }], background: '#f4e3c1' },
+    { id: 'pag2', elements: [], background: '#f4e3c1' }
+  ]
 };
 
 const PortfolioContext = createContext<any>(null);
 
-export const PortfolioProvider = ({ children }) => {
+export const PortfolioProvider = ({ children }: { children: React.ReactNode }) => {
   const [config, setConfig] = useState<SiteConfig>(() => {
     const saved = localStorage.getItem('portfolio-config');
     return saved ? JSON.parse(saved) : defaultConfig;
   });
 
-  const saveConfig = (newConfig: SiteConfig) => {
+  const saveConfig = async (newConfig: SiteConfig) => {
     setConfig(newConfig);
     localStorage.setItem('portfolio-config', JSON.stringify(newConfig));
-    // Aqui você chamaria a Netlify Function: fetch('/.netlify/functions/save-config', ...)
+
+    // CONEXÃO REAL COM NETLIFY (Descomente quando tiver a Function pronta)
+    // try {
+    //   await fetch('/.netlify/functions/save-config', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(newConfig),
+    //   });
+    // } catch (error) {
+    //   console.error('Erro ao salvar no servidor', error);
+    // }
   };
 
   const restoreDefault = () => {
