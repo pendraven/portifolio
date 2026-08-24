@@ -9,10 +9,8 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState<'tv' | 'portfolio' | 'book'>('tv');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
-  
-  // Estado para navegação do livro
   const [currentBookPage, setCurrentBookPage] = useState(0);
-  const [pageInput, setPageInput] = useState('1');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,14 +32,14 @@ const Admin = () => {
     }
   };
 
-  // Funções para o Portfólio
+  // Funções para Portfólio
   const updatePortfolioElement = (id: string, updates: any) => {
     const newElements = config.portfolioElements.map(el => el.id === id ? { ...el, ...updates } : el);
     setConfig({ ...config, portfolioElements: newElements });
     setHasUnsavedChanges(true);
   };
 
-  // Funções para o Livro
+  // Funções para Livro
   const updateBookElement = (pageId: string, elementId: string, updates: any) => {
     const newPages = config.bookPages.map(page => {
       if (page.id === pageId) {
@@ -53,7 +51,6 @@ const Admin = () => {
     setHasUnsavedChanges(true);
   };
 
-  // Adicionar elemento no livro
   const addBookElement = (pageId: string, type: 'text' | 'image' | 'title') => {
     const newElement: any = {
       id: Date.now().toString(),
@@ -88,7 +85,6 @@ const Admin = () => {
     setHasUnsavedChanges(true);
   };
 
-  // Adicionar nova página
   const addNewPage = () => {
     const newPage = { id: Date.now().toString(), elements: [], background: '#f4e3c1' };
     setConfig({ ...config, bookPages: [...config.bookPages, newPage] });
@@ -96,7 +92,6 @@ const Admin = () => {
     setCurrentBookPage(config.bookPages.length);
   };
 
-  // Excluir página
   const deletePage = (pageId: string) => {
     if (config.bookPages.length <= 1) return alert('O livro precisa ter pelo menos 1 página');
     if (confirm('Tem certeza que deseja excluir esta página?')) {
@@ -107,18 +102,26 @@ const Admin = () => {
     }
   };
 
-  // Navegação do livro
   const goToNextPage = () => {
     if (currentBookPage < config.bookPages.length - 1) {
       setCurrentBookPage(prev => prev + 1);
-      setPageInput(String(currentBookPage + 2));
     }
   };
 
   const goToPrevPage = () => {
     if (currentBookPage > 0) {
       setCurrentBookPage(prev => prev - 1);
-      setPageInput(String(currentBookPage));
+    }
+  };
+
+  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Usa URL.createObjectURL para gerar um link temporário do arquivo
+      const pdfUrl = URL.createObjectURL(file);
+      setConfig({ ...config, pdfUrl });
+      setHasUnsavedChanges(true);
+      setPdfFile(file);
     }
   };
 
@@ -154,7 +157,7 @@ const Admin = () => {
         {activeTab === 'tv' && (
           <div>
             <h2>Configurar Tela da TV</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 20 }}>
               <div style={{ background: 'white', padding: 20, borderRadius: 10 }}>
                 <h3>Parâmetros</h3>
                 <label>Largura: <input type="number" value={config.tv.width} onChange={(e) => { setConfig({...config, tv: {...config.tv, width: +e.target.value}}); setHasUnsavedChanges(true); }} /></label>
@@ -166,10 +169,45 @@ const Admin = () => {
                 <label>Opacidade: <input type="number" step="0.1" value={config.tv.opacity} onChange={(e) => { setConfig({...config, tv: {...config.tv, opacity: +e.target.value}}); setHasUnsavedChanges(true); }} /></label>
               </div>
               
-              <div style={{ background: '#333', borderRadius: 10, padding: 20, position: 'relative' }}>
-                <h3 style={{ color: 'white' }}>Prévia da Imagem</h3>
-                <img src="/assets/background.jpg" alt="bg" style={{ width: '100%', borderRadius: 10 }} />
-                <div style={{ position: 'absolute', top: config.tv.y, left: config.tv.x, width: config.tv.width, height: config.tv.height, border: '2px solid red', borderRadius: config.tv.borderRadius, transform: `rotate(${config.tv.rotation}deg)`, background: 'rgba(0,255,0,0.2)' }} />
+              {/* Prévia em tela cheia com a imagem */}
+              <div style={{ background: '#000', borderRadius: 10, padding: 0, position: 'relative', height: '80vh', overflow: 'hidden' }}>
+                <img src="/assets/background.jpg" alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                
+                {/* A TV arrastável no preview */}
+                <div 
+                  style={{ 
+                    position: 'absolute', 
+                    top: config.tv.y, 
+                    left: config.tv.x, 
+                    width: config.tv.width, 
+                    height: config.tv.height, 
+                    border: '2px solid red', 
+                    borderRadius: config.tv.borderRadius, 
+                    transform: `rotate(${config.tv.rotation}deg)`, 
+                    background: 'rgba(0,255,0,0.2)', 
+                    cursor: 'move'
+                  }}
+                  onMouseDown={(e) => {
+                    const startX = e.clientX;
+                    const startY = e.clientY;
+                    const origX = config.tv.x;
+                    const origY = config.tv.y;
+                    const handleMouseMove = (moveEvent: MouseEvent) => {
+                      const dx = moveEvent.clientX - startX;
+                      const dy = moveEvent.clientY - startY;
+                      setConfig({...config, tv: {...config.tv, x: origX + dx, y: origY + dy}});
+                      setHasUnsavedChanges(true);
+                    };
+                    const handleMouseUp = () => {
+                      window.removeEventListener('mousemove', handleMouseMove);
+                      window.removeEventListener('mouseup', handleMouseUp);
+                    };
+                    window.addEventListener('mousemove', handleMouseMove);
+                    window.addEventListener('mouseup', handleMouseUp);
+                  }}
+                >
+                  <span style={{ position: 'absolute', bottom: 5, left: 5, color: 'white', fontSize: 12 }}>TV</span>
+                </div>
               </div>
             </div>
           </div>
@@ -208,23 +246,21 @@ const Admin = () => {
                 <div style={{ background: '#f9f9f9', padding: 15, marginBottom: 10 }}>
                   <strong>Tamanho recomendado:</strong> {config.tv.width * 2} × {config.tv.height * 2} px
                 </div>
+                
+                {/* BOTÃO DE UPLOAD DE PDF */}
                 <input 
                   type="file" 
                   accept="application/pdf" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        setConfig({ ...config, pdfUrl: reader.result as string });
-                        setHasUnsavedChanges(true);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  style={{ padding: 10 }}
+                  onChange={handlePdfUpload}
+                  style={{ padding: 10, border: '1px solid #ccc' }}
                 />
-                {config.pdfUrl && <p style={{ color: 'green', marginTop: 10 }}>✓ PDF carregado!</p>}
+                
+                {config.pdfUrl && (
+                  <div style={{ marginTop: 20 }}>
+                    <p style={{ color: 'green' }}>✓ PDF carregado e salvo!</p>
+                    <iframe src={config.pdfUrl} style={{ width: '100%', height: '400px', border: '1px solid #ccc' }} title="Preview PDF" />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -243,7 +279,7 @@ const Admin = () => {
                 <div>
                   {config.bookPages.map((page, index) => (
                     <div key={page.id} style={{ padding: 5, border: '1px solid #ddd', marginBottom: 5, background: currentBookPage === index ? '#e0e0e0' : 'transparent' }}>
-                      <span onClick={() => { setCurrentBookPage(index); setPageInput(String(index + 1)); }} style={{ cursor: 'pointer' }}>Página {index + 1}</span>
+                      <span onClick={() => { setCurrentBookPage(index); }} style={{ cursor: 'pointer' }}>Página {index + 1}</span>
                       <button onClick={() => deletePage(page.id)} style={{ color: 'red', float: 'right', border: 'none', background: 'transparent' }}>X</button>
                     </div>
                   ))}
@@ -256,14 +292,14 @@ const Admin = () => {
               </div>
 
               {/* Prévia do Livro (Aberto) */}
-              <div style={{ background: '#555', borderRadius: 10, padding: 20 }}>
+              <div style={{ background: '#2c2c2c', borderRadius: 10, padding: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, color: 'white' }}>
                   <button onClick={goToPrevPage} disabled={currentBookPage === 0}>← Anterior</button>
                   <span>Página {currentBookPage + 1} de {config.bookPages.length}</span>
                   <button onClick={goToNextPage} disabled={currentBookPage === config.bookPages.length - 1}>Próxima →</button>
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'stretch' }}>
                   {/* Página Esquerda */}
                   <div style={{ flex: 1, background: config.bookPages[currentBookPage].background, padding: 20, position: 'relative', boxShadow: '0 4px 10px rgba(0,0,0,0.5)', minHeight: 400 }}>
                     <span style={{ position: 'absolute', bottom: 10, left: 10, fontSize: 12, color: '#888' }}>{currentBookPage + 1}</span>
