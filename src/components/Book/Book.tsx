@@ -1,12 +1,34 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { usePortfolio } from '../../context/PortfolioContext';
 
 const Book = () => {
+  const { config } = usePortfolio();
   const [isOpen, setIsOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setCurrentPage(0);
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < config.bookPages.length - 1) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  if (config.bookPages.length === 0) return null;
 
   return (
     <>
-      {/* Área clicável invisível sobre o livro na imagem */}
+      {/* Área clicável invisível na imagem para abrir o livro */}
       <div 
         style={{ 
           position: 'absolute', 
@@ -16,14 +38,13 @@ const Book = () => {
           right: '100px', 
           cursor: 'pointer',
           zIndex: 5,
-          background: 'transparent'
+          opacity: 0,
         }}
         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.3'}
         onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
         onClick={() => setIsOpen(true)}
       />
 
-      {/* MODAL DO LIVRO (Só aparece quando isOpen é true) */}
       {isOpen && (
         <motion.div 
           style={{ 
@@ -32,48 +53,96 @@ const Book = () => {
             left: 0, 
             width: '100vw', 
             height: '100vh', 
-            background: 'rgba(0,0,0,0.9)', // Fundo bem escuro
+            background: 'rgba(0,0,0,0.9)', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            zIndex: 9999 // Z-index ALTÍSSIMO para garantir que fique na frente de tudo
+            zIndex: 9999
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          {/* O LIVRO ABERTO */}
           <motion.div 
             style={{ 
               width: '800px', 
-              maxWidth: '90vw', // Para não estourar em telas menores
+              maxWidth: '90vw', 
               height: '600px', 
               maxHeight: '80vh',
-              background: '#f4e3c1', // Cor de papel
+              background: '#f4e3c1', 
               borderRadius: '10px', 
               display: 'flex', 
               position: 'relative', 
               boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-              zIndex: 10000 // Acima do fundo preto
+              zIndex: 10000
             }}
             initial={{ rotateY: -90 }}
             animate={{ rotateY: 0 }}
             transition={{ duration: 0.8 }}
           >
             {/* Página Esquerda */}
-            <div style={{ flex: 1, borderRight: '2px solid #d1bf9e', padding: 20, overflow: 'auto' }}>
-              <h2>Capítulo 1</h2>
-              <p style={{ marginTop: 20 }}>Este é o conteúdo da página esquerda.</p>
+            <div style={{ flex: 1, borderRight: '2px solid #d1bf9e', padding: 20, position: 'relative', overflow: 'auto' }}>
+              <h4 style={{ position: 'absolute', bottom: 10, left: 10, color: '#888' }}>{currentPage + 1}</h4>
+              {config.bookPages[currentPage]?.elements.map(el => (
+                <div 
+                  key={el.id} 
+                  style={{ 
+                    position: 'absolute', 
+                    left: `${el.x}px`, 
+                    top: `${el.y}px`, 
+                    width: `${el.width}px`, 
+                    height: `${el.height}px`,
+                    transform: `rotate(${el.rotation}deg)`,
+                    opacity: el.opacity,
+                    fontFamily: el.fontFamily,
+                    fontSize: el.fontSize,
+                    color: el.color,
+                    textAlign: el.align,
+                  }}
+                >
+                  {el.type === 'text' || el.type === 'title' ? el.content : (
+                    <img src={el.content} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  )}
+                </div>
+              ))}
             </div>
-            
-            {/* Página Direita */}
-            <div style={{ flex: 1, padding: 20, overflow: 'auto' }}>
-              <h2>Capítulo 2</h2>
-              <p style={{ marginTop: 20 }}>Este é o conteúdo da página direita.</p>
+
+            {/* Página Direita (Se existir) */}
+            <div style={{ flex: 1, padding: 20, position: 'relative', overflow: 'auto' }}>
+              <h4 style={{ position: 'absolute', bottom: 10, right: 10, color: '#888' }}>{currentPage + 2}</h4>
+              {currentPage + 1 < config.bookPages.length && config.bookPages[currentPage + 1]?.elements.map(el => (
+                <div 
+                  key={el.id} 
+                  style={{ 
+                    position: 'absolute', 
+                    left: `${el.x}px`, 
+                    top: `${el.y}px`, 
+                    width: `${el.width}px`, 
+                    height: `${el.height}px`,
+                    transform: `rotate(${el.rotation}deg)`,
+                    opacity: el.opacity,
+                    fontFamily: el.fontFamily,
+                    fontSize: el.fontSize,
+                    color: el.color,
+                    textAlign: el.align,
+                  }}
+                >
+                  {el.type === 'text' || el.type === 'title' ? el.content : (
+                    <img src={el.content} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Navegação */}
+            <div style={{ position: 'absolute', bottom: 15, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 10, alignItems: 'center' }}>
+              <button onClick={goToPrevPage} disabled={currentPage === 0}>← Anterior</button>
+              <span>{currentPage + 1} / {config.bookPages.length}</span>
+              <button onClick={goToNextPage} disabled={currentPage === config.bookPages.length - 1}>Próxima →</button>
             </div>
 
             {/* Botão Fechar */}
             <button 
-              onClick={() => setIsOpen(false)} 
+              onClick={handleClose} 
               style={{ 
                 position: 'absolute', 
                 top: 15, 
@@ -85,7 +154,7 @@ const Book = () => {
                 borderRadius: '5px', 
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                zIndex: 10001 // Acima de tudo
+                zIndex: 10001
               }}
             >
               Fechar
