@@ -1,9 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-// Definição dos tipos (para o TypeScript não reclamar)
 interface Element {
   id: string;
-  type: 'text' | 'image' | 'pdf';
+  type: 'text' | 'image';
   content: string;
   x: number;
   y: number;
@@ -23,13 +22,11 @@ interface BookPage {
   background: string;
 }
 
-interface TVConfig {
-  width: number; height: number; x: number; y: number; rotation: number;
-  borderRadius: number; opacity: number;
-}
-
 interface SiteConfig {
-  tv: TVConfig;
+  tv: {
+    width: number; height: number; x: number; y: number; rotation: number;
+    borderRadius: number; opacity: number;
+  };
   portfolioMode: 'editor' | 'pdf';
   portfolioElements: Element[];
   pdfUrl: string | null;
@@ -57,20 +54,9 @@ export const PortfolioProvider = ({ children }: { children: React.ReactNode }) =
     return saved ? JSON.parse(saved) : defaultConfig;
   });
 
-  const saveConfig = async (newConfig: SiteConfig) => {
+  const saveConfig = (newConfig: SiteConfig) => {
     setConfig(newConfig);
     localStorage.setItem('portfolio-config', JSON.stringify(newConfig));
-
-    // CONEXÃO REAL COM NETLIFY (Descomente quando tiver a Function pronta)
-    // try {
-    //   await fetch('/.netlify/functions/save-config', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(newConfig),
-    //   });
-    // } catch (error) {
-    //   console.error('Erro ao salvar no servidor', error);
-    // }
   };
 
   const restoreDefault = () => {
