@@ -5,20 +5,36 @@ const Book = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 5 }}>
-      {/* Camada clicável invisível sobre o livro na imagem */}
+    <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 5, width: '100%', height: '100%' }}>
+      
+      {/* A imagem do livro transparente (Fica exatamente onde deve ficar) */}
+      <img 
+        src="/assets/book-overlay.png" 
+        alt="Livro" 
+        style={{ 
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          width: '100%', 
+          height: '100%', 
+          objectFit: 'cover',
+          zIndex: 5
+        }} 
+      />
+
+      {/* Área clicável invisível sobre o livro (ajuste essas coordenadas) */}
       <div 
         style={{ 
           position: 'absolute', 
-          width: '300px', 
-          height: '300px', 
-          bottom: '50px', 
-          right: '50px', 
+          width: '250px', 
+          height: '200px', 
+          bottom: '100px', 
+          right: '100px', 
           cursor: 'pointer',
-          opacity: 0.2 // Feedback sutil
+          zIndex: 6
         }}
-        onMouseEnter={(e) => e.target.style.opacity = '0.5'}
-        onMouseLeave={(e) => e.target.style.opacity = '0.2'}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.3'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
         onClick={() => setIsOpen(true)}
       />
 
@@ -34,11 +50,9 @@ const Book = () => {
             animate={{ rotateY: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Página Esquerda */}
             <div style={{ flex: 1, borderRight: '2px solid #d1bf9e', padding: 20 }}>
               <h2>Capítulo 1</h2>
             </div>
-            {/* Página Direita */}
             <div style={{ flex: 1, padding: 20 }}>
               <p>Conteúdo da página.</p>
             </div>
