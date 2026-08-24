@@ -32,14 +32,12 @@ const Admin = () => {
     }
   };
 
-  // Funções para Portfólio
   const updatePortfolioElement = (id: string, updates: any) => {
     const newElements = config.portfolioElements.map(el => el.id === id ? { ...el, ...updates } : el);
     setConfig({ ...config, portfolioElements: newElements });
     setHasUnsavedChanges(true);
   };
 
-  // Funções para Livro
   const updateBookElement = (pageId: string, elementId: string, updates: any) => {
     const newPages = config.bookPages.map(page => {
       if (page.id === pageId) {
@@ -54,8 +52,8 @@ const Admin = () => {
   const addBookElement = (pageId: string, type: 'text' | 'image' | 'title') => {
     const newElement: any = {
       id: Date.now().toString(),
-      type: type === 'title' ? 'text' : type,
-      content: type === 'title' ? 'Novo Título' : (type === 'text' ? 'Novo Texto' : ''),
+      type: type,
+      content: type === 'title' ? 'Meu Título' : (type === 'text' ? 'Escreva aqui...' : ''),
       x: 20,
       y: 20,
       width: type === 'title' ? 250 : 150,
@@ -117,7 +115,6 @@ const Admin = () => {
   const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Usa URL.createObjectURL para gerar um link temporário do arquivo
       const pdfUrl = URL.createObjectURL(file);
       setConfig({ ...config, pdfUrl });
       setHasUnsavedChanges(true);
@@ -139,7 +136,6 @@ const Admin = () => {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#eaeaea' }}>
-      {/* Menu Lateral */}
       <div style={{ width: 260, background: '#1a1a2e', color: 'white', padding: 20 }}>
         <h2>⚙️ Painel</h2>
         <button onClick={() => setActiveTab('tv')} style={tabStyle(activeTab === 'tv')}>📺 Tela da TV</button>
@@ -148,12 +144,10 @@ const Admin = () => {
         <button onClick={() => setIsLoggedIn(false)} style={{ ...tabStyle(false), background: '#e94560', marginTop: 30 }}>Sair</button>
       </div>
 
-      {/* Área de Trabalho */}
       <div style={{ flex: 1, padding: 30, overflowY: 'auto' }}>
         {hasUnsavedChanges && <div style={{ background: '#ffeb3b', padding: 10, marginBottom: 20 }}>⚠️ Alterações não salvas</div>}
         {saveMessage && <div style={{ background: '#4CAF50', padding: 10, marginBottom: 20, color: 'white' }}>{saveMessage}</div>}
 
-        {/* ABA 1: TELA DA TV */}
         {activeTab === 'tv' && (
           <div>
             <h2>Configurar Tela da TV</h2>
@@ -169,18 +163,18 @@ const Admin = () => {
                 <label>Opacidade: <input type="number" step="0.1" value={config.tv.opacity} onChange={(e) => { setConfig({...config, tv: {...config.tv, opacity: +e.target.value}}); setHasUnsavedChanges(true); }} /></label>
               </div>
               
-              {/* Prévia em tela cheia com a imagem */}
-              <div style={{ background: '#000', borderRadius: 10, padding: 0, position: 'relative', height: '80vh', overflow: 'hidden' }}>
-                <img src="/assets/background.jpg" alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {/* Prévia com imagem proporcional (usa aspect ratio e % para alinhar) */}
+              <div style={{ background: '#000', borderRadius: 10, position: 'relative', overflow: 'hidden', aspectRatio: '16/9', width: '100%' }}>
+                <img src="/assets/background.jpg" alt="bg" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} />
                 
-                {/* A TV arrastável no preview */}
+                {/* A caixinha da TV em porcentagem para se adaptar ao admin */}
                 <div 
                   style={{ 
                     position: 'absolute', 
-                    top: config.tv.y, 
-                    left: config.tv.x, 
-                    width: config.tv.width, 
-                    height: config.tv.height, 
+                    top: `${(config.tv.y / 1000) * 100}%`, 
+                    left: `${(config.tv.x / 1000) * 100}%`, 
+                    width: `${(config.tv.width / 1000) * 100}%`, 
+                    height: `${(config.tv.height / 1000) * 100}%`, 
                     border: '2px solid red', 
                     borderRadius: config.tv.borderRadius, 
                     transform: `rotate(${config.tv.rotation}deg)`, 
@@ -195,7 +189,12 @@ const Admin = () => {
                     const handleMouseMove = (moveEvent: MouseEvent) => {
                       const dx = moveEvent.clientX - startX;
                       const dy = moveEvent.clientY - startY;
-                      setConfig({...config, tv: {...config.tv, x: origX + dx, y: origY + dy}});
+                      // Converte o movimento do mouse em pixels relativos à imagem
+                      const containerWidth = (e.currentTarget.parentElement as HTMLElement).offsetWidth;
+                      const containerHeight = (e.currentTarget.parentElement as HTMLElement).offsetHeight;
+                      const scaleX = 1000 / containerWidth;
+                      const scaleY = 1000 / containerHeight;
+                      setConfig({...config, tv: {...config.tv, x: origX + (dx * scaleX), y: origY + (dy * scaleY)}});
                       setHasUnsavedChanges(true);
                     };
                     const handleMouseUp = () => {
@@ -213,7 +212,6 @@ const Admin = () => {
           </div>
         )}
 
-        {/* ABA 2: PORTFÓLIO */}
         {activeTab === 'portfolio' && (
           <div>
             <h2>Editar Portfólio</h2>
@@ -246,15 +244,7 @@ const Admin = () => {
                 <div style={{ background: '#f9f9f9', padding: 15, marginBottom: 10 }}>
                   <strong>Tamanho recomendado:</strong> {config.tv.width * 2} × {config.tv.height * 2} px
                 </div>
-                
-                {/* BOTÃO DE UPLOAD DE PDF */}
-                <input 
-                  type="file" 
-                  accept="application/pdf" 
-                  onChange={handlePdfUpload}
-                  style={{ padding: 10, border: '1px solid #ccc' }}
-                />
-                
+                <input type="file" accept="application/pdf" onChange={handlePdfUpload} style={{ padding: 10, border: '1px solid #ccc' }} />
                 {config.pdfUrl && (
                   <div style={{ marginTop: 20 }}>
                     <p style={{ color: 'green' }}>✓ PDF carregado e salvo!</p>
@@ -266,13 +256,10 @@ const Admin = () => {
           </div>
         )}
 
-        {/* ABA 3: LIVRO */}
         {activeTab === 'book' && (
           <div>
             <h2>Editar Livro</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20 }}>
-              
-              {/* Coluna de Controle */}
               <div style={{ background: 'white', padding: 20 }}>
                 <h3>Páginas</h3>
                 <button onClick={addNewPage} style={{ marginBottom: 10 }}>+ Nova Página</button>
@@ -291,7 +278,7 @@ const Admin = () => {
                 <button onClick={() => addBookElement(config.bookPages[currentBookPage].id, 'image')} style={{ display: 'block', width: '100%' }}>+ Imagem</button>
               </div>
 
-              {/* Prévia do Livro (Aberto) */}
+              {/* Prévia do Livro (Aberto) com navegação real */}
               <div style={{ background: '#2c2c2c', borderRadius: 10, padding: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, color: 'white' }}>
                   <button onClick={goToPrevPage} disabled={currentBookPage === 0}>← Anterior</button>
